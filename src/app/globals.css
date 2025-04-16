@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=VT323&display=swap');
 @import "tailwindcss";
 
 :root {
@@ -13,8 +14,38 @@
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-  background: linear-gradient(to right, #141e30, #243b55);
+  background-image: url('https://www.wallpaperhub.app/_next/image?url=https%3A%2F%2Fcdn.wallpaperhub.app%2Fcloudcache%2Fe%2F6%2F7%2F3%2F1%2F4%2Fe6731493cd50103e3561288c33a6a589c9bf67ab.jpg&w=750&q=75');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  min-height: 100vh;
+  font-family: Tahoma, sans-serif;
+}
+
+
+
+
+/* XP-style SweetAlert input and button */
+.swal2-popup {
+  font-family: Tahoma, sans-serif;
+  background-color: #c0c0c0 !important;
+  border: 2px solid #000080 !important;
+  box-shadow: inset -2px -2px #fff, inset 2px 2px #808080;
+}
+
+.swal2-input {
+  background-color: #ffffff !important;
+  border: 2px inset #808080 !important;
+  font-family: Tahoma, sans-serif;
+  font-size: 14px;
+}
+
+.swal2-confirm,
+.swal2-cancel {
+  background: linear-gradient(to bottom, #ffffff, #dcdcdc) !important;
+  color: black !important;
+  font-family: Tahoma, sans-serif;
+  border: 2px outset #fff !important;
+  box-shadow: 1px 1px #808080;
 }

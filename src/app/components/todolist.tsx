@@ -2,6 +2,8 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Swal from 'sweetalert2';
+import 'sweetalert2/dist/sweetalert2.min.css';
+import toast, { Toaster } from 'react-hot-toast';
 import {
   collection,
   addDoc,
@@ -14,12 +16,89 @@ import {
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
+const windowsBlue = '#3a6ea5';
+const windowsGray = '#c0c0c0';
+const windowsLightGray = '#eaeaea';
+const windowsDark = '#2b2b2b';
+
+const successColor = '#90EE90';
+const errorColor = '#ff7f7f';
+const upcomingColor = '#cfeeff';
+
+const shadowInset = 'inset -2px -2px #fff, inset 2px 2px #808080';
+const borderInset = '2px inset #aaa';
+const buttonStyle = {
+  backgroundColor: windowsLightGray,
+  border: '2px outset #fff',
+  padding: '4px 12px',
+  fontFamily: 'Tahoma',
+  cursor: 'pointer',
+  marginBottom: '10px',
+  marginRight: '5px',
+};
+
+const popupStyle = {
+  fontFamily: 'Tahoma',
+  background: windowsGray,
+  border: '2px solid #000080',
+  boxShadow: shadowInset,
+  color: 'black',
+};
+
 type Task = {
   id: string;
   text: string;
   completed: boolean;
   deadline: string;
 };
+
+function XPWindow({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div
+      className="border"
+      style={{
+        borderColor: '#000080',
+        borderWidth: '4px',
+        backgroundColor: windowsGray,
+        boxShadow: shadowInset,
+        fontFamily: 'Tahoma, sans-serif',
+        color: 'black',
+      }}
+    >
+      <div
+        style={{
+          background: 'linear-gradient(to right, #1d5fbf, #3a6ea5)',
+          color: 'white',
+          padding: '4px 10px',
+          fontWeight: 'bold',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          borderBottom: '2px solid #000080',
+        }}
+      >
+        <span>{title}</span>
+        <span style={{ fontWeight: 'normal' }}>🗙</span>
+      </div>
+      <div className="p-4 overflow-y-auto max-h-[60vh]">{children}</div>
+    </div>
+  );
+}
+
+function Clock() {
+  const [time, setTime] = useState(new Date());
+
+  useEffect(() => {
+    const interval = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div style={{ position: 'fixed', bottom: 8, right: 12, background: windowsGray, padding: '4px 8px', border: borderInset, fontFamily: 'Tahoma', fontSize: '12px' }}>
+      🕒 {time.toLocaleTimeString()}
+    </div>
+  );
+}
 
 export default function TodoList() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -48,7 +127,6 @@ export default function TodoList() {
       });
       setTimeRemaining(newTimeRemaining);
     }, 1000);
-
     return () => clearInterval(interval);
   }, [tasks]);
 
@@ -56,182 +134,175 @@ export default function TodoList() {
     const deadlineTime = new Date(deadline).getTime();
     const now = new Date().getTime();
     const difference = deadlineTime - now;
-
-    if (difference <= 0) return 'Waktu habis!';
-
+    if (difference <= 0) return '⛔ Waktu habis!';
     const hours = Math.floor(difference / (1000 * 60 * 60));
     const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
     const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-
     return `${hours}j ${minutes}m ${seconds}s`;
   };
 
   const addTask = async (): Promise<void> => {
     const { value: formValues } = await Swal.fire({
-      title: 'Tambahkan tugas baru',
+      title: '<div style="font-family: Tahoma; font-size: 16px;">📝 Tambahkan Tugas Baru</div>',
       html:
-        '<input id="swal-input1" class="swal2-input" placeholder="Nama tugas">' +
-        '<input id="swal-input2" type="datetime-local" class="swal2-input">',
-      focusConfirm: false,
+        '<input id="swal-input1" class="swal2-input" placeholder="Judul Tugas" style="font-family: Tahoma; border: 2px inset #ccc; background-color: #fff;">' +
+        '<input id="swal-input2" type="datetime-local" class="swal2-input" style="font-family: Tahoma; border: 2px inset #ccc; background-color: #fff;">',
+      background: windowsGray,
       showCancelButton: true,
-      confirmButtonText: 'Tambah',
-      cancelButtonText: 'Batal',
+      confirmButtonText: '✔️ Tambah',
+      cancelButtonText: '❌ Batal',
       preConfirm: () => {
         const taskName = (document.getElementById('swal-input1') as HTMLInputElement)?.value;
         const deadline = (document.getElementById('swal-input2') as HTMLInputElement)?.value;
-  
         if (!taskName || !deadline) {
-          Swal.showValidationMessage('Nama tugas dan deadline tidak boleh kosong!');
+          Swal.showValidationMessage('Tugas dan deadline tidak boleh kosong!');
           return;
         }
-  
         return [taskName, deadline];
       },
     });
-  
+
     if (!formValues) return;
-  
     const [text, deadline] = formValues;
+
     const deadlineDate = new Date(deadline);
-  
     if (deadlineDate < new Date()) {
-      Swal.fire('Error', 'Deadline tidak boleh di masa lalu', 'error');
+      Swal.fire('⚠️ Error', 'Deadline tidak boleh di masa lalu', 'error');
       return;
     }
-  
-    const newTask: Omit<Task, 'id'> = {
-      text,
-      completed: false,
-      deadline,
-    };
-  
+
+    const newTask: Omit<Task, 'id'> = { text, completed: false, deadline };
     const docRef = await addDoc(collection(db, 'tasks'), newTask);
     setTasks([...tasks, { id: docRef.id, ...newTask }]);
-    Swal.fire('Sukses!', 'Tugas berhasil ditambahkan.', 'success');
-  };
-
-  const toggleTask = async (id: string): Promise<void> => {
-    const updatedTasks = tasks.map((task) =>
-      task.id === id ? { ...task, completed: !task.completed } : task
-    );
-    setTasks(updatedTasks);
-    const taskRef = doc(db, 'tasks', id);
-    await updateDoc(taskRef, {
-      completed: updatedTasks.find((task) => task.id === id)?.completed,
+    toast.success('🟦 Tugas berhasil ditambahkan!', {
+      style: popupStyle,
+      icon: '📌',
+      position: 'top-right',
     });
   };
 
-  const deleteTask = async (id: string): Promise<void> => {
+  const deleteTask = async (id: string) => {
     await deleteDoc(doc(db, 'tasks', id));
     setTasks(tasks.filter((task) => task.id !== id));
-    Swal.fire('Berhasil!', 'Tugas berhasil dihapus.', 'success');
+    toast.success('🗑️ Tugas dihapus', { style: popupStyle, position: 'top-right' });
   };
 
-  const editTask = async (task: Task): Promise<void> => {
+  const toggleComplete = async (task: Task) => {
+    const taskRef = doc(db, 'tasks', task.id);
+    await updateDoc(taskRef, { completed: !task.completed });
+    setTasks(tasks.map((t) => (t.id === task.id ? { ...t, completed: !t.completed } : t)));
+    toast.success(`Tugas ${task.completed ? 'dibuka kembali' : 'diselesaikan'}`, {
+      style: popupStyle,
+      position: 'top-right',
+    });
+  };
+
+  const editTask = async (task: Task) => {
+    const formattedDeadline = new Date(task.deadline).toISOString().slice(0, 16);
     const { value: formValues } = await Swal.fire({
-      title: 'Edit Tugas',
-      html: `
-        <input id="swal-input1" class="swal2-input" value="${task.text}">
-        <input id="swal-input2" type="datetime-local" class="swal2-input" value="${task.deadline}">
-      `,
+      title: '<div style="font-family: Tahoma; font-size: 16px;">✏️ Edit Tugas</div>',
+      html:
+        `<input id="swal-input1" class="swal2-input" value="${task.text}" style="font-family: Tahoma; border: 2px inset #ccc; background-color: #fff;">` +
+        `<input id="swal-input2" type="datetime-local" class="swal2-input" value="${formattedDeadline}" style="font-family: Tahoma; border: 2px inset #ccc; background-color: #fff;">`,
+      background: windowsGray,
       showCancelButton: true,
-      confirmButtonText: 'Simpan',
-      cancelButtonText: 'Batal',
+      confirmButtonText: '💾 Simpan',
+      cancelButtonText: '❌ Batal',
       preConfirm: () => {
-        return [
-          (document.getElementById('swal-input1') as HTMLInputElement).value,
-          (document.getElementById('swal-input2') as HTMLInputElement).value,
-        ];
+        const newText = (document.getElementById('swal-input1') as HTMLInputElement)?.value;
+        const newDeadline = (document.getElementById('swal-input2') as HTMLInputElement)?.value;
+        if (!newText || !newDeadline) {
+          Swal.showValidationMessage('Tidak boleh kosong!');
+          return;
+        }
+        return [newText, newDeadline];
       },
     });
 
-    if (formValues) {
-      const [newText, newDeadline] = formValues;
-      const taskRef = doc(db, 'tasks', task.id);
-      await updateDoc(taskRef, {
-        text: newText,
-        deadline: newDeadline,
-      });
-      setTasks(tasks.map(t => t.id === task.id ? { ...t, text: newText, deadline: newDeadline } : t));
-      Swal.fire('Berhasil!', 'Tugas berhasil diperbarui.', 'success');
-    }
+    if (!formValues) return;
+    const [newText, newDeadline] = formValues;
+
+    const taskRef = doc(db, 'tasks', task.id);
+    await updateDoc(taskRef, { text: newText, deadline: newDeadline });
+    setTasks(tasks.map((t) => (t.id === task.id ? { ...t, text: newText, deadline: newDeadline } : t)));
+    toast.success('📝 Tugas diperbarui', { style: popupStyle, position: 'top-right' });
   };
 
   return (
-    <div className="max-w-2xl mx-auto mt-12 p-6 bg-white shadow-2xl rounded-3xl border border-gray-200 dark:bg-gray-900 dark:border-gray-700 transition-all">
-      <h1 className="text-4xl font-extrabold text-center text-emerald-600 dark:text-emerald-400 mb-8 drop-shadow">✨ To-Do List ✨</h1>
-      <div className="flex justify-center mb-8">
-        <button
-          onClick={addTask}
-          className="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-8 py-3 rounded-full shadow-lg hover:scale-105 transition-transform duration-200 hover:border-2 hover:border-white
- hover:cursor-pointer"
-        >
-          ➕ Tambah Tugas
-        </button>
-      </div>
-      {loading ? (
-        <p className="text-center text-gray-500 dark:text-gray-400 animate-pulse">Memuat tugas...</p>
-      ) : (
-        <ul className="space-y-4">
-          <AnimatePresence>
-            {tasks.map((task) => {
-              const timeLeft = calculateTimeRemaining(task.deadline);
-              const isExpired = timeLeft === 'Waktu habis!';
-              const taskColor = task.completed
-  ? 'bg-[#0f1e12] text-green-400 border-green-500 shadow-[0_0_10px_#00ff00] hover:shadow-[0_0_20px_#00ff00]'
-  : isExpired
-  ? 'bg-[#2c0f0f] text-red-400 border-red-500 shadow-[0_0_10px_#ff0000] hover:shadow-[0_0_20px_#ff0000]'
-  : 'bg-[#1e1a0f] text-yellow-300 border-yellow-500 shadow-[0_0_10px_#ffff00] hover:shadow-[0_0_20px_#ffff00]';
-
-
-              return (
-                <motion.li
-  key={task.id}
-  initial={{ opacity: 0, y: -10 }}
-  animate={{ opacity: 1, y: 0 }}
-  exit={{ opacity: 0, x: -20 }}
-  transition={{ duration: 0.3 }}
-  className={`border-l-4 px-5 py-4 rounded-md font-mono transition-all duration-300 ${taskColor}`}
->
-  <div className="flex justify-between items-start">
-    <span
-      onClick={() => toggleTask(task.id)}
-      className={`cursor-pointer flex items-center gap-2 w-2/3 transition-all duration-200 ${
-        task.completed ? 'line-through text-green-500' : 'pipboy-glow'
-      }`}
+    <div
+      className="max-w-2xl mx-auto mt-12"
+      style={{
+        backgroundImage: 'url(https://upload.wikimedia.org/wikipedia/en/6/6b/Windows_XP_Default_Wallpaper.jpg)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        minHeight: '100vh',
+        padding: '20px',
+        fontFamily: 'Tahoma, sans-serif',
+      }}
     >
-      {task.completed && <span>✅</span>}
-      {!task.completed && isExpired && <span>❌</span>}
-      {!task.completed && !isExpired && <span>⏳</span>}
-      {task.text}
-    </span>
+      <Toaster />
+      <Clock />
+      <XPWindow title="🧾 To-Do List">
+        <button onClick={addTask} style={buttonStyle}>➕ Tambah Tugas</button>
+        {loading ? (
+          <p>⏳ Memuat tugas...</p>
+        ) : (
+          <ul style={{ listStyle: 'none', padding: 0 }}>
+            <AnimatePresence>
+              {tasks.map((task) => {
+                const isOverdue = new Date(task.deadline) < new Date();
+                const backgroundColor = task.completed
+                  ? successColor
+                  : isOverdue
+                  ? errorColor
+                  : upcomingColor;
 
-              
-    <div className="flex space-x-2">
-      <button
-        onClick={() => editTask(task)}
-        className="text-[10px] px-2 py-1 bg-[#0f380f] text-[#9bbc0f] border-2 border-[#9bbc0f] shadow-[2px_2px_0_#183c1a] hover:scale-105 transition hover:cursor-pointer"
-      >
-        Edit
-      </button>
-      <button
-        onClick={() => deleteTask(task.id)}
-        className="text-[10px] px-2 py-1 bg-[#380f0f] text-[#9bbc0f] border-2 border-[#bc0f0f] shadow-[2px_2px_0_#183c1a] hover:scale-105 transition hover:cursor-pointer"
-      >
-        Hapus
-      </button>
-    </div>
-  </div>
-  <p className="text-[10px] mt-2">📅 {new Date(task.deadline).toLocaleString()}</p>
-  <p className="text-[10px] mt-1">
-    {task.completed ? '✅ Selesai' : `⏳ ${timeRemaining[task.id] || 'Menghitung...'}`}
-  </p>
-</motion.li>
-              );
-            })}
-          </AnimatePresence>
-        </ul>
-      )}
+                return (
+                  <motion.li
+                    key={task.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.3 }}
+                    style={{ backgroundColor, color: 'black', border: borderInset, padding: '8px', marginBottom: '8px' }}
+                  >
+                    <p
+  onClick={() => toggleComplete(task)}
+  style={{
+    margin: 0,
+    textDecoration: task.completed ? 'line-through' : 'none',
+    fontWeight: task.completed ? 'normal' : 'bold',
+    cursor: 'pointer',
+  }}
+>
+  {task.text}
+</p>
+
+                    <p style={{ fontSize: '10px', marginTop: '4px' }}>
+                      📅 {new Date(task.deadline).toLocaleString()}
+                    </p>
+                    <p style={{ fontSize: '10px', marginTop: '2px' }}>
+                      {task.completed
+                        ? '✅ Selesai'
+                        : isOverdue
+                        ? timeRemaining[task.id] || 'Menghitung...'
+                        : `${timeRemaining[task.id] || 'Menghitung...'}`}
+                    </p>
+                    <div style={{ marginTop: '4px' }}>
+                      <button onClick={() => editTask(task)} style={{ ...buttonStyle, backgroundColor: '#f0ad4e', color: 'white' }}>
+                        ✏️ Edit
+                      </button>
+                      <button onClick={() => deleteTask(task.id)} style={{ ...buttonStyle, backgroundColor: '#d9534f', color: 'white' }}>
+                        🗑️ Hapus
+                      </button>
+                    </div>
+                  </motion.li>
+                );
+              })}
+            </AnimatePresence>
+          </ul>
+        )}
+      </XPWindow>
     </div>
   );
 }
