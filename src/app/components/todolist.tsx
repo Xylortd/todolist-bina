@@ -210,13 +210,13 @@ export default function TodoList() {
     <div className="flex space-x-2">
       <button
         onClick={() => editTask(task)}
-        className="text-[10px] px-2 py-1 bg-[#0f380f] text-[#9bbc0f] border-2 border-[#9bbc0f] shadow-[2px_2px_0_#183c1a] hover:scale-105 transition"
+        className="text-[10px] px-2 py-1 bg-[#0f380f] text-[#9bbc0f] border-2 border-[#9bbc0f] shadow-[2px_2px_0_#183c1a] hover:scale-105 transition hover:cursor-pointer"
       >
         Edit
       </button>
       <button
         onClick={() => deleteTask(task.id)}
-        className="text-[10px] px-2 py-1 bg-[#0f380f] text-[#9bbc0f] border-2 border-[#9bbc0f] shadow-[2px_2px_0_#183c1a] hover:scale-105 transition"
+        className="text-[10px] px-2 py-1 bg-[#380f0f] text-[#9bbc0f] border-2 border-[#bc0f0f] shadow-[2px_2px_0_#183c1a] hover:scale-105 transition hover:cursor-pointer"
       >
         Hapus
       </button>
