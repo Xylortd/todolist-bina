@@ -16,10 +16,8 @@ import {
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
-const windowsBlue = '#3a6ea5';
 const windowsGray = '#c0c0c0';
 const windowsLightGray = '#eaeaea';
-const windowsDark = '#2b2b2b';
 
 const successColor = '#90EE90';
 const errorColor = '#ff7f7f';
