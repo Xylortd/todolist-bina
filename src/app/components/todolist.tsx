@@ -180,10 +180,31 @@ export default function TodoList() {
   };
 
   const deleteTask = async (id: string) => {
-    await deleteDoc(doc(db, 'tasks', id));
-    setTasks(tasks.filter((task) => task.id !== id));
-    toast.success('🗑️ Tugas dihapus', { style: popupStyle, position: 'top-right' });
+    const result = await Swal.fire({
+      title: '<div style="font-family: Tahoma;">❓ Hapus Tugas</div>',
+      text: 'Apakah kamu yakin ingin menghapus tugas ini?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d9534f',
+      cancelButtonColor: '#aaa',
+      confirmButtonText: '🗑️ Hapus',
+      cancelButtonText: '❌ Batal',
+      background: windowsGray,
+      customClass: {
+        popup: 'windows-popup',
+      },
+    });
+  
+    if (result.isConfirmed) {
+      await deleteDoc(doc(db, 'tasks', id));
+      setTasks(tasks.filter((task) => task.id !== id));
+      toast.success('🗑️ Tugas dihapus', {
+        style: popupStyle,
+        position: 'top-right',
+      });
+    }
   };
+  
 
   const toggleComplete = async (task: Task) => {
     const taskRef = doc(db, 'tasks', task.id);
